@@ -2,74 +2,98 @@
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
 
-## Setup
+## Docker development
 
-Make sure to install dependencies:
+Build the development image and start Nuxt:
 
-```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
+```sh
+docker compose -f docker/compose.yaml up --build
 ```
 
-## Development Server
+The app is available at [http://localhost:3000](http://localhost:3000). Source files are bind-mounted into the container, so Nuxt hot reload works without rebuilding the image.
 
-Start the development server on `http://localhost:3000`:
+The image installs the standalone Corepack package. Corepack reads the exact pnpm version from `package.json`, so development and image builds use the same package manager without requiring Node.js or pnpm on the host.
 
-```bash
-# npm
-npm run dev
+To use another host port, set `NUXT_PORT` when starting Compose:
 
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
+```sh
+NUXT_PORT=8080 docker compose -f docker/compose.yaml up --build
 ```
 
-## Production
+Stop the development environment with:
 
-Build the application for production:
+```sh
+docker compose -f docker/compose.yaml down
+```
 
-```bash
-# npm
-npm run build
+Dependencies and Nuxt's generated development files live in Docker volumes. Rebuild the image after changing `package.json` or `pnpm-lock.yaml`:
 
-# pnpm
+```sh
+docker compose -f docker/compose.yaml up --build
+```
+
+To also reset those volumes:
+
+```sh
+docker compose -f docker/compose.yaml down --volumes
+```
+
+## Manage dependencies
+
+Run package-management commands inside the development container. For example, add a dependency with:
+
+```sh
+docker compose -f docker/compose.yaml exec app pnpm add <package>
+```
+
+Run Taze without installing it on the host:
+
+```sh
+docker compose -f docker/compose.yaml exec app pnpm dlx taze
+```
+
+## Production container
+
+The production target builds Nuxt's Node server output and copies only that output into the runtime image. It runs as an unprivileged user and does not contain the application source or development dependencies.
+
+Run the production image locally with the same restrictions expected from the deployed container:
+
+```sh
+docker compose -f docker/compose.production.yaml up --build --detach
+```
+
+Verify the application and its load-balancer health endpoint:
+
+```sh
+curl --fail http://localhost:3000/
+curl --fail http://localhost:3000/healthz
+```
+
+Stop it with:
+
+```sh
+docker compose -f docker/compose.production.yaml down
+```
+
+To build an image for an external registry without Compose:
+
+```sh
+docker build --target production --tag create-nuxt:local .
+```
+
+The production container contract is:
+
+- HTTP on container port `3000`;
+- `GET /healthz` returns `200` when the Nuxt process is ready;
+- configuration and secrets are supplied at runtime, never during the image build;
+- logs are written to standard output and standard error;
+- the filesystem can be read-only, with temporary storage available at `/tmp`;
+- the process receives `SIGTERM` during shutdown and is given time to drain connections.
+
+The AWS runtime should configure its target-group health check to use `/healthz`. TLS termination, WAF, networking, autoscaling, runtime secrets, and deployment strategy remain platform configuration rather than concerns embedded in this image. An nginx layer is not required when the container runs behind an ALB or equivalent managed reverse proxy.
+
+## Direct production build
+
+```sh
 pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.

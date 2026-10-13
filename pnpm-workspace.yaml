@@ -1,2 +1,5 @@
 allowBuilds:
   esbuild: true
+
+# Corepack owns the package-manager version declared in package.json.
+pmOnFail: ignore
