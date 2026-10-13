@@ -8,7 +8,12 @@
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "test:browser:install": "playwright-core install chromium",
+    "test:e2e": "vitest run --project e2e"
   },
   "dependencies": {
     "nuxt": "^4.6.0",
@@ -17,6 +22,7 @@
   },
   "devDependencies": {
     "@nuxt/test-utils": "^4.3.3",
+    "@vitest/browser-playwright": "^5.0.4",
     "@vue/test-utils": "^2.5.1",
     "happy-dom": "^21.0.1",
     "playwright-core": "^1.64.0",

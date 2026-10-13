@@ -52,6 +52,28 @@ Run Taze without installing it on the host:
 docker compose -f docker/compose.yaml exec app pnpm dlx taze
 ```
 
+## Test
+
+Run the complete test suite:
+
+```sh
+pnpm test
+```
+
+The suite is split into unit, browser, and end-to-end projects. Each project can also be run independently:
+
+```sh
+pnpm test:unit
+pnpm test:browser
+pnpm test:e2e
+```
+
+Install the Chromium binary required by the browser project before its first run:
+
+```sh
+pnpm test:browser:install
+```
+
 ## Production container
 
 The production target builds Nuxt's Node server output and copies only that output into the runtime image. It runs as an unprivileged user and does not contain the application source or development dependencies.
